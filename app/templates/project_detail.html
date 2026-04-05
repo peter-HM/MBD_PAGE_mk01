@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ project.name | default('프로젝트') }} — DevLog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.append.css') }}">
+  <style>
+  /* ── project_detail 전용 스타일 ── */
+
+  /* 상태 점 (project_form과 동일 정의 — 이미 있으면 중복 무방) */
+  .status-dot          { display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0; }
+  .dot-planning        { background:#6B7080; }
+  .dot-in_progress     { background:#FF9500;box-shadow:0 0 5px rgba(255,149,0,.45); }
+  .dot-testing         { background:#FFBD2E;box-shadow:0 0 5px rgba(255,189,46,.45); }
+  .dot-done            { background:#28C840;box-shadow:0 0 5px rgba(103, 169, 113, 0.45); }
+
+  /* ── 전체 레이아웃 ── */
+  .prd-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .prd-content {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface3) transparent;
+  }
+  .prd-content::-webkit-scrollbar       { width: 5px; }
+  .prd-content::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+
+  /* ── 1. HERO ── */
+  .prd-hero {
+    position: relative;
+    height: 260px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0D1829 0%, #0C0D10 100%);
+    flex-shrink: 0;
+  }
+
+  .prd-hero-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: .5;
+  }
+
+  .prd-hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(26,140,255,.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(26,140,255,.055) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 90% 90% at 65% 50%, black 10%, transparent 100%);
+  }
+
+  .prd-hero-glow {
+    position: absolute;
+    width: 480px; height: 480px;
+    background: radial-gradient(circle, rgba(26,140,255,.11) 0%, transparent 68%);
+    top: -140px; right: -80px;
+    pointer-events: none;
+  }
+
+  .prd-hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(12,13,16,1) 0%, rgba(12,13,16,.25) 55%, transparent 100%);
+  }
+
+  /* 이미지 없을 때 */
+  .prd-hero-no-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .prd-hero-no-thumb-icon {
+    font-size: 4rem;
+    opacity: .12;
+    position: relative; z-index: 1;
+  }
+
+  /* ── 2. HEADER ── */
+  .prd-header {
+    padding: 1.5rem 2rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .prd-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .68rem;
+    color: var(--muted);
+    margin-bottom: .9rem;
+  }
+  .prd-breadcrumb a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color .15s;
+  }
+  .prd-breadcrumb a:hover { color: var(--accent); }
+  .prd-breadcrumb-sep { opacity: .4; }
+
+  .prd-header-main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: .9rem;
+  }
+
+  .prd-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -.025em;
+    color: var(--text);
+  }
+
+  /* 우측 링크 버튼 묶음 */
+  .prd-header-links {
+    display: flex;
+    gap: .6rem;
+    flex-shrink: 0;
+    align-items: flex-start;
+    margin-top: .2rem;
+  }
+
+  .prd-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .45rem 1rem;
+    border-radius: 6px;
+    font-size: .75rem;
+    font-family: var(--font-body);
+    text-decoration: none;
+    transition: all .18s;
+    white-space: nowrap;
+  }
+  .prd-link-btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid var(--accent);
+  }
+  .prd-link-btn-primary:hover {
+    background: #3399FF;
+    box-shadow: 0 0 16px rgba(26,140,255,.3);
+  }
+  .prd-link-btn-outline {
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .prd-link-btn-outline:hover {
+    border-color: rgba(255,255,255,.22);
+    color: var(--text);
+  }
+  .prd-link-btn-disabled {
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    opacity: .38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .prd-summary {
+    font-size: .88rem;
+    color: var(--muted);
+    line-height: 1.65;
+    margin-bottom: .9rem;
+    max-width: 680px;
+  }
+
+  /* 메타 행 */
+  .prd-meta {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+  }
+
+  .prd-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .68rem;
+    padding: .22rem .7rem;
+    border-radius: 100px;
+    font-weight: 500;
+    border: 1px solid;
+  }
+  .prd-status-planning   { background:rgba(107,112,128,.1); border-color:rgba(107,112,128,.25); color:#9AA0B0; }
+  .prd-status-in_progress{ background:rgba(255,149,0,.1);   border-color:rgba(255,149,0,.3);   color:#FF9500; }
+  .prd-status-testing    { background:rgba(255,189,46,.1);  border-color:rgba(255,189,46,.3);  color:#FFBD2E; }
+  .prd-status-done       { background:rgba(40,200,64,.1);   border-color:rgba(40,200,64,.3);   color:#28C840; }
+
+  .prd-meta-item {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .72rem;
+    color: var(--muted);
+  }
+  .prd-meta-sep { color: var(--border); font-size: .9rem; }
+
+  /* ── 메인 바디: 좌측 콘텐츠 + 우측 사이드카드 ── */
+  .prd-body {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── 좌측 콘텐츠 영역 ── */
+  .prd-main {
+    padding: 1.8rem 2rem;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* 섹션 블록 공통 */
+  .prd-section { display: flex; flex-direction: column; gap: .7rem; }
+
+  .prd-section-label {
+    font-size: .62rem;
+    color: var(--muted);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+  }
+  .prd-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* 기술 스택 태그 */
+  .prd-stack-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+  }
+  .prd-stack-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .32rem .75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: .75rem;
+    color: var(--text);
+    transition: all .15s;
+  }
+  .prd-stack-tag:hover {
+    border-color: rgba(26,140,255,.3);
+    background: rgba(26,140,255,.06);
+    color: var(--accent);
+  }
+
+  /* 상세 설명 */
+  .prd-desc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.4rem 1.6rem;
+  }
+  .prd-desc p {
+    font-size: .87rem;
+    color: #C8CAD4;
+    line-height: 1.85;
+    margin-bottom: .9rem;
+  }
+  .prd-desc p:last-child { margin-bottom: 0; }
+
+  /* ── 우측 사이드카드 ── */
+  .prd-sidebar {
+    padding: 1.4rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+
+  /* 정보 카드 */
+  .prd-info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .prd-info-card-title {
+    padding: .6rem .9rem;
+    font-size: .62rem;
+    color: var(--muted);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .prd-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .65rem .9rem;
+    font-size: .75rem;
+    border-bottom: 1px solid var(--border);
+    gap: .5rem;
+  }
+  .prd-info-row:last-child { border-bottom: none; }
+
+  .prd-info-key { color: var(--muted); flex-shrink: 0; }
+  .prd-info-val {
+    color: var(--text);
+    text-align: right;
+    word-break: break-all;
+    min-width: 0;
+  }
+
+  /* 링크 카드 */
+  .prd-link-card {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+  }
+
+  .prd-link-card-btn {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .75rem .9rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--muted);
+    font-size: .78rem;
+    transition: all .18s;
+  }
+  .prd-link-card-btn:hover {
+    border-color: rgba(26,140,255,.3);
+    background: rgba(26,140,255,.06);
+    color: var(--text);
+  }
+  .prd-link-card-btn.disabled {
+    opacity: .35;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+  .prd-link-card-icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem;
+    flex-shrink: 0;
+  }
+  .prd-link-card-arrow {
+    margin-left: auto;
+    font-size: .75rem;
+    opacity: .35;
+    transition: opacity .15s, transform .15s;
+  }
+  .prd-link-card-btn:hover .prd-link-card-arrow {
+    opacity: 1;
+    transform: translate(2px, -2px);
+  }
+
+  /* 관리자 액션 카드 */
+  .prd-admin-card {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+  }
+  .prd-admin-label {
+    font-size: .6rem;
+    color: var(--muted);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding-bottom: .4rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── 하단 네비 ── */
+  .prd-footer-nav {
+    padding: 1.4rem 2rem;
+    border-top: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+  }
+  .prd-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .5rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--muted);
+    font-size: .75rem;
+    transition: all .18s;
+  }
+  .prd-nav-btn:hover {
+    border-color: rgba(255,255,255,.2);
+    color: var(--text);
+  }
+
+  /* 반응형 */
+  @media (max-width: 860px) {
+    .prd-body { grid-template-columns: 1fr; }
+    .prd-sidebar { border-top: 1px solid var(--border); }
+    .prd-main { border-right: none; }
+    .prd-header-main { flex-direction: column; gap: .9rem; }
+    .prd-footer-nav  { border-right: none; }
+  }
+  @media (max-width: 560px) {
+    .prd-header { padding: 1.2rem; }
+    .prd-main   { padding: 1.4rem 1.2rem; }
+  }
+  </style>
+</head>
+<body>
+
+<div class="macos-window macos-window-wide">
+
+  <!-- macOS Titlebar -->
+  <div class="macos-titlebar">
+    <div class="traffic-lights">
+      <button class="tl tl-close" onclick="history.back()"></button>
+      <button class="tl tl-min"   onclick="void(0)"></button>
+      <button class="tl tl-max"   onclick="void(0)"></button>
+    </div>
+    <span class="macos-title">devlog — {{ project.name | default('프로젝트') | truncate(38) }}</span>
+    {% if is_owner %}
+    <div class="titlebar-actions">
+      <a href="/project/{{ project.id }}/edit" class="tb-action-btn">수정</a>
+      <button class="tb-action-btn" style="color:var(--red)"
+              onclick="confirmDeleteProject('{{ project.id }}', '{{ project.name }}')">삭제</button>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="app-shell">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <a href="/" class="site-logo" style="text-decoration:none">
+          <span class="logo-bracket">[</span>DEV<span class="logo-accent">LOG</span><span class="logo-bracket">]</span>
+        </a>
+        <span class="topbar-divider"></span>
+        <span class="topbar-subtitle">프로젝트</span>
+      </div>
+      <div class="topbar-right">
+        <!-- 상태 배지 -->
+        {% set status_map = {
+          'planning':    ('dot-planning',    'Planning',    'prd-status-planning'),
+          'in_progress': ('dot-in_progress', 'In Progress', 'prd-status-in_progress'),
+          'testing':     ('dot-testing',     'Testing',     'prd-status-testing'),
+          'done':        ('dot-done',        'Done',        'prd-status-done'),
+        } %}
+        {% set s = status_map.get(project.status | default('planning'), status_map['planning']) %}
+        <span class="prd-status-badge {{ s[2] }}">
+          <span class="status-dot {{ s[0] }}"></span>
+          {{ s[1] }}
+        </span>
+        {% if current_user %}
+          <span class="btn-login">{{ current_user.username }}</span>
+        {% else %}
+          <a href="/login" class="btn-login">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            로그인
+          </a>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="prd-layout">
+      <div class="prd-content">
+
+        <!-- 1. HERO -->
+        {% if project.thumbnail | default(false) %}
+        <div class="prd-hero">
+          <img class="prd-hero-img" src="{{ project.thumbnail }}" alt="{{ project.name }}"/>
+          <div class="prd-hero-grid"></div>
+          <div class="prd-hero-glow"></div>
+          <div class="prd-hero-overlay"></div>
+        </div>
+        {% else %}
+        <div class="prd-hero prd-hero-no-thumb">
+          <div class="prd-hero-grid"></div>
+          <div class="prd-hero-glow"></div>
+          <div class="prd-hero-overlay"></div>
+          <span class="prd-hero-no-thumb-icon">🚀</span>
+        </div>
+        {% endif %}
+
+        <!-- 2. HEADER -->
+        <div class="prd-header">
+          <div class="prd-breadcrumb">
+            <a href="/">홈</a>
+            <span class="prd-breadcrumb-sep">›</span>
+            <a href="/?page=projects">프로젝트</a>
+            <span class="prd-breadcrumb-sep">›</span>
+            <span>{{ project.name | default('프로젝트') }}</span>
+          </div>
+
+          <div class="prd-header-main">
+            <h1 class="prd-title">{{ project.name | default('프로젝트 이름') }}</h1>
+
+            <!-- 3. 주요 링크 버튼 (헤더 우측) -->
+            <div class="prd-header-links">
+              {% if project.demo_url | default(false) %}
+              <a href="{{ project.demo_url }}" target="_blank" rel="noopener"
+                 class="prd-link-btn prd-link-btn-primary">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z"/></svg>
+                데모 보기
+              </a>
+              {% else %}
+              <span class="prd-link-btn prd-link-btn-disabled">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>
+                데모 없음
+              </span>
+              {% endif %}
+
+              {% if project.github_url | default(false) %}
+              <a href="{{ project.github_url }}" target="_blank" rel="noopener"
+                 class="prd-link-btn prd-link-btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.3 9.42 7.88 10.95.58.1.79-.25.79-.56v-2.17c-3.2.69-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.19a11.1 11.1 0 0 1 2.9-.39c.98 0 1.97.13 2.9.39 2.2-1.5 3.17-1.19 3.17-1.19.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.42.36.79 1.07.79 2.15v3.19c0 .31.2.67.8.56A10.51 10.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+                GitHub
+              </a>
+              {% else %}
+              <span class="prd-link-btn prd-link-btn-disabled">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" opacity=".5"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.3 9.42 7.88 10.95.58.1.79-.25.79-.56v-2.17c-3.2.69-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.19a11.1 11.1 0 0 1 2.9-.39c.98 0 1.97.13 2.9.39 2.2-1.5 3.17-1.19 3.17-1.19.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.42.36.79 1.07.79 2.15v3.19c0 .31.2.67.8.56A10.51 10.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+                GitHub 없음
+              </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- 요약 -->
+          {% if project.summary | default(false) %}
+          <p class="prd-summary">{{ project.summary }}</p>
+          {% endif %}
+
+          <!-- 메타 정보 -->
+          <div class="prd-meta">
+            <span class="prd-status-badge {{ s[2] }}">
+              <span class="status-dot {{ s[0] }}"></span>{{ s[1] }}
+            </span>
+            <span class="prd-meta-sep">·</span>
+            <span class="prd-meta-item">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              {{ project.created_at | default('2026.01.01') }}
+            </span>
+            <span class="prd-meta-sep">·</span>
+            <span class="prd-meta-item">
+              {% if project.is_public | default(true) %}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/></svg>
+              공개
+              {% else %}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              비공개
+              {% endif %}
+            </span>
+          </div>
+        </div>
+
+        <!-- BODY: 좌측 콘텐츠 + 우측 사이드카드 -->
+        <div class="prd-body">
+
+          <!-- ── 좌측 콘텐츠 ── -->
+          <div class="prd-main">
+
+            <!-- 4. 기술 스택 -->
+            {% set stack_items = project.stack if project.stack is iterable and project.stack is not string
+                                 else (project.stack | default('') ).split(',') %}
+            {% if stack_items | select | list %}
+            <div class="prd-section">
+              <div class="prd-section-label">기술 스택</div>
+              <div class="prd-stack-list">
+                {% for tag in stack_items %}
+                  {% if tag | trim %}
+                  <span class="prd-stack-tag">{{ tag | trim }}</span>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- 5. 상세 설명 -->
+            {% if project.description | default(false) %}
+            <div class="prd-section">
+              <div class="prd-section-label">프로젝트 설명</div>
+              <div class="prd-desc">
+                {% for line in project.description.split('\n') %}
+                  {% if line.strip() %}
+                  <p>{{ line }}</p>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- 하단 네비게이션 -->
+            <div class="prd-footer-nav">
+              <a href="/" class="prd-nav-btn">← 홈으로</a>
+              <a href="/?page=projects" class="prd-nav-btn">프로젝트 목록</a>
+            </div>
+
+          </div><!-- /prd-main -->
+
+          <!-- ── 우측 사이드카드 ── -->
+          <aside class="prd-sidebar">
+
+            <!-- 링크 카드 -->
+            <div>
+              <div class="prd-section-label" style="margin-bottom:.6rem">링크</div>
+              <div class="prd-link-card">
+                {% if project.demo_url | default(false) %}
+                <a href="{{ project.demo_url }}" target="_blank" rel="noopener"
+                   class="prd-link-card-btn">
+                  <span class="prd-link-card-icon">🔗</span>
+                  <span>데모 보기</span>
+                  <span class="prd-link-card-arrow">↗</span>
+                </a>
+                {% else %}
+                <div class="prd-link-card-btn disabled">
+                  <span class="prd-link-card-icon" style="opacity:.4">🔗</span>
+                  <span>데모 없음</span>
+                </div>
+                {% endif %}
+
+                {% if project.github_url | default(false) %}
+                <a href="{{ project.github_url }}" target="_blank" rel="noopener"
+                   class="prd-link-card-btn">
+                  <span class="prd-link-card-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.3 9.42 7.88 10.95.58.1.79-.25.79-.56v-2.17c-3.2.69-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.19a11.1 11.1 0 0 1 2.9-.39c.98 0 1.97.13 2.9.39 2.2-1.5 3.17-1.19 3.17-1.19.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.42.36.79 1.07.79 2.15v3.19c0 .31.2.67.8.56A10.51 10.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+                  </span>
+                  <span>GitHub</span>
+                  <span class="prd-link-card-arrow">↗</span>
+                </a>
+                {% else %}
+                <div class="prd-link-card-btn disabled">
+                  <span class="prd-link-card-icon" style="opacity:.4">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.3 9.42 7.88 10.95.58.1.79-.25.79-.56v-2.17c-3.2.69-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.19a11.1 11.1 0 0 1 2.9-.39c.98 0 1.97.13 2.9.39 2.2-1.5 3.17-1.19 3.17-1.19.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.42.36.79 1.07.79 2.15v3.19c0 .31.2.67.8.56A10.51 10.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+                  </span>
+                  <span>GitHub 없음</span>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- 프로젝트 정보 카드 -->
+            <div class="prd-info-card">
+              <div class="prd-info-card-title">프로젝트 정보</div>
+              <div class="prd-info-row">
+                <span class="prd-info-key">상태</span>
+                <span class="prd-info-val" style="display:flex;align-items:center;gap:.4rem;justify-content:flex-end">
+                  <span class="status-dot {{ s[0] }}"></span>{{ s[1] }}
+                </span>
+              </div>
+              <div class="prd-info-row">
+                <span class="prd-info-key">공개 여부</span>
+                <span class="prd-info-val">
+                  {{ '공개' if project.is_public | default(true) else '비공개' }}
+                </span>
+              </div>
+              <div class="prd-info-row">
+                <span class="prd-info-key">등록일</span>
+                <span class="prd-info-val">{{ project.created_at | default('—') }}</span>
+              </div>
+              {% set stack_items_info = project.stack if project.stack is iterable and project.stack is not string
+                                        else (project.stack | default('') ).split(',') %}
+              <div class="prd-info-row">
+                <span class="prd-info-key">스택 수</span>
+                <span class="prd-info-val">{{ stack_items_info | select | list | length }}개</span>
+              </div>
+            </div>
+
+            <!-- 6. 관리자 액션 (is_owner) -->
+            {% if is_owner %}
+            <div>
+              <div class="prd-admin-label">관리</div>
+              <div class="prd-admin-card">
+                <a href="/project/{{ project.id }}/edit" class="prd-link-card-btn">
+                  <span class="prd-link-card-icon">✏️</span>
+                  <span>프로젝트 수정</span>
+                  <span class="prd-link-card-arrow">→</span>
+                </a>
+                <button class="prd-link-card-btn"
+                        style="border:1px solid rgba(255,95,87,.2);color:#FF5F57;background:rgba(255,95,87,.04);width:100%;cursor:pointer;font-family:var(--font-body)"
+                        onclick="confirmDeleteProject('{{ project.id }}', '{{ project.name }}')">
+                  <span class="prd-link-card-icon" style="background:rgba(255,95,87,.1)">🗑️</span>
+                  <span>프로젝트 삭제</span>
+                </button>
+              </div>
+            </div>
+            {% endif %}
+
+          </aside><!-- /prd-sidebar -->
+
+        </div><!-- /prd-body -->
+
+      </div><!-- /prd-content -->
+
+      <!-- 우측 사이드바 메뉴 (index.html과 동일) -->
+      <aside class="sidebar">
+        <nav class="sidebar-nav">
+          <button class="snav-item" onclick="window.location.href='/'">
+            <div class="snav-thumb snav-thumb-home">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
+            </div>
+            <span class="snav-label">홈</span>
+          </button>
+          <button class="snav-item" onclick="window.location.href='/?page=posts'">
+            <div class="snav-thumb snav-thumb-posts">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
+            </div>
+            <span class="snav-label">포스트</span>
+          </button>
+          <button class="snav-item active">
+            <div class="snav-thumb snav-thumb-projects">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="8" height="8" rx="1"/><rect x="14" y="3" width="8" height="8" rx="1"/><rect x="2" y="13" width="8" height="8" rx="1"/><rect x="14" y="13" width="8" height="8" rx="1"/></svg>
+            </div>
+            <span class="snav-label">프로젝트</span>
+          </button>
+        </nav>
+        <div class="sidebar-bottom">
+          <button class="sidebar-all-btn" id="scroll-top-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+            맨 위로
+          </button>
+        </div>
+      </aside>
+
+    </div><!-- /prd-layout -->
+
+    <footer class="site-footer">
+      <span>© 2025 Your Name</span>
+      <span class="footer-sep">·</span>
+      <span>Built with FastAPI &amp; Jinja2</span>
+      <span class="footer-sep">·</span>
+      <span>Deployed on AWS</span>
+    </footer>
+
+  </div><!-- /app-shell -->
+</div><!-- /macos-window -->
+
+<!-- 삭제 확인 모달 -->
+<div class="modal-overlay" id="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-icon">🗑️</div>
+    <div class="modal-title">프로젝트를 삭제할까요?</div>
+    <div class="modal-body" id="modal-body">삭제하면 복구할 수 없습니다.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">취소</button>
+      <button class="btn-danger" id="modal-confirm">삭제</button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', path='js/main.js') }}"></script>
+<script src="{{ url_for('static', path='js/main.append.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  initTrafficLights();
+
+  // 맨 위로
+  document.getElementById('scroll-top-btn')?.addEventListener('click', () => {
+    document.querySelector('.prd-content')?.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
+
+/* 프로젝트 삭제 확인 모달 */
+function confirmDeleteProject(id, name) {
+  const overlay = document.getElementById('modal-overlay');
+  const body = document.getElementById('modal-body');
+  const confirm = document.getElementById('modal-confirm');
+  if (!overlay) return;
+
+  if (body) body.textContent = `"${name}" 프로젝트를 삭제하면 복구할 수 없습니다.`;
+  overlay.style.display = 'flex';
+
+  if (confirm) {
+    confirm.onclick = () => {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/project/${id}/delete`;
+      document.body.appendChild(form);
+      form.submit();
+    };
+  }
+}
+
+function closeModal() {
+  const overlay = document.getElementById('modal-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+document.addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+</script>
+</body>
+</html>

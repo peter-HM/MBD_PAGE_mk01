@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>대시보드 — DevLog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.append.css') }}">
+</head>
+<body>
+
+<div class="macos-window macos-window-wide">
+
+  <div class="macos-titlebar">
+    <div class="traffic-lights">
+      <button class="tl tl-close" onclick="void(0)"></button>
+      <button class="tl tl-min"   onclick="void(0)"></button>
+      <button class="tl tl-max"   onclick="void(0)"></button>
+    </div>
+    <span class="macos-title">devlog — 대시보드</span>
+  </div>
+
+  <div class="app-shell">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <a href="/" class="site-logo" style="text-decoration:none">
+          <span class="logo-bracket">[</span>DEV<span class="logo-accent">LOG</span><span class="logo-bracket">]</span>
+        </a>
+        <span class="topbar-divider"></span>
+        <span class="topbar-subtitle">대시보드</span>
+      </div>
+      <div class="topbar-right">
+        <div class="profile-avatar" style="width:34px;height:34px;overflow:hidden;">
+          {% if current_user.avatar_image %}
+            <img src="{{ current_user.avatar_image }}" alt="avatar" style="width:100%;height:100%;object-fit:cover;" />
+          {% else %}
+            <span>{{ (current_user.nickname | default('U'))[:1] }}</span>
+          {% endif %}
+        </div>
+        <span class="topbar-badge">Admin</span>
+        <a href="/post/new" class="btn-primary" style="font-size:.72rem;padding:.35rem .9rem;text-decoration:none">
+          + 새 포스트
+        </a>
+        <a href="/" class="btn-login">← 홈으로</a>
+      </div>
+    </header>
+
+    <!-- Dashboard Layout -->
+    <div class="main-layout">
+      <div class="content-area">
+
+        <!-- Stat Cards -->
+        <div class="db-stats">
+          {% for stat in stats | default([
+            {'label': '전체 포스트', 'value': '24',  'sub': '+3 이번 달', 'color': 'blue',  'icon': '📄'},
+            {'label': '전체 방문자', 'value': '1.2K','sub': '+18% 지난 주', 'color': 'green', 'icon': '👥'},
+            {'label': '프로젝트',   'value': '6',   'sub': '진행 중 2개',  'color': 'coral', 'icon': '🚀'},
+            {'label': '이번 달 조회','value': '340', 'sub': '일 평균 11',  'color': 'amber', 'icon': '👁️'},
+          ]) %}
+          <div class="db-stat-card db-stat-{{ stat.color }}">
+            <div class="db-stat-icon">{{ stat.icon }}</div>
+            <div class="db-stat-body">
+              <div class="db-stat-value">{{ stat.value }}</div>
+              <div class="db-stat-label">{{ stat.label }}</div>
+              <div class="db-stat-sub">{{ stat.sub }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="db-section">
+          <div class="db-section-header">
+            <span class="db-section-title">빠른 실행</span>
+          </div>
+          <div class="db-quick-actions">
+            <a href="/post/new" class="db-qa-btn">
+              <span class="db-qa-icon">✏️</span>
+              <span>새 포스트 작성</span>
+            </a>
+            <a href="/project/new" class="db-qa-btn">
+              <span class="db-qa-icon">🚀</span>
+              <span>프로젝트 추가</span>
+            </a>
+            <a href="/settings" class="db-qa-btn">
+              <span class="db-qa-icon">⚙️</span>
+              <span>사이트 설정</span>
+            </a>
+            <a href="/analytics" class="db-qa-btn">
+              <span class="db-qa-icon">📊</span>
+              <span>방문자 분석</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Recent Posts -->
+        <div class="db-section">
+          <div class="db-section-header">
+            <span class="db-section-title">최근 포스트</span>
+            <a href="/post/new" class="db-section-action">+ 새 글</a>
+          </div>
+          <div class="db-table">
+            <div class="db-table-head">
+              <span>제목</span>
+              <span>카테고리</span>
+              <span>조회</span>
+              <span>날짜</span>
+              <span>상태</span>
+              <span>관리</span>
+            </div>
+            {% for post in recent_posts | default([
+              {'id':1,'title':'EC2에 FastAPI 배포하기 — Nginx + Gunicorn 완전 정복','cat':'AWS',   'views':124,'date':'2026.03.30','public':true},
+              {'id':2,'title':'GitHub Actions로 자동 배포 파이프라인 구축하기',     'cat':'CI/CD', 'views':89, 'date':'2026.03.26','public':true},
+              {'id':3,'title':'Terraform으로 AWS VPC 처음부터 만들기',              'cat':'IaC',   'views':67, 'date':'2026.03.24','public':true},
+              {'id':4,'title':'Docker Compose 로컬 개발 환경 세팅하기',             'cat':'Docker','views':210,'date':'2026.03.20','public':false},
+              {'id':5,'title':'CloudWatch 알람 설정 가이드',                        'cat':'AWS',   'views':44, 'date':'2026.03.10','public':true},
+            ]) %}
+            <div class="db-table-row">
+              <span class="db-row-title">
+                <a href="/post/{{ post.id }}" class="db-row-link">{{ post.title }}</a>
+              </span>
+              <span><span class="genre-tag">{{ post.cat }}</span></span>
+              <span class="db-row-views">{{ post.views }}</span>
+              <span class="db-row-date">{{ post.date }}</span>
+              <span>
+                <span class="db-status {{ 'db-status-live' if post.public else 'db-status-draft' }}">
+                  {{ '공개' if post.public else '비공개' }}
+                </span>
+              </span>
+              <span class="db-row-actions">
+                <a href="/post/{{ post.id }}/edit" class="db-act-btn">수정</a>
+                <button class="db-act-btn db-act-del"
+                        data-id="{{ post.id }}"
+                        data-title="{{ post.title }}"
+                        onclick="confirmDelete(this)">삭제</button>
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Projects -->
+        <div class="db-section">
+          <div class="db-section-header">
+            <span class="db-section-title">프로젝트 관리</span>
+            <a href="/project/new" class="db-section-action">+ 추가</a>
+          </div>
+          <div class="project-grid" id="db-projects-grid">
+            {% for p in projects | default([
+              {'id':1,'emoji':'🚀','bg':'#0D1E35','name':'Personal Homepage','tags':['FastAPI'],'status':'live'},
+              {'id':2,'emoji':'🏗️','bg':'#1A120D','name':'Infra as Code',    'tags':['Terraform'],'status':'wip'},
+              {'id':3,'emoji':'⚙️','bg':'#0D1A0D','name':'CI/CD Pipeline',   'tags':['Docker'],'status':'live'},
+              {'id':4,'emoji':'📊','bg':'#1A0D1A','name':'Monitoring Stack',  'tags':['Prometheus'],'status':'wip'},
+            ]) %}
+            <div class="project-card" style="position:relative">
+              <div class="project-thumb" style="background:{{ p.bg }}">
+                <span style="font-size:2rem;position:relative;z-index:1">{{ p.emoji }}</span>
+              </div>
+              <div class="project-info">
+                <div class="project-name">
+                  {{ p.name }}
+                  <span class="db-status {{ 'db-status-live' if p.status == 'live' else 'db-status-draft' }}" style="margin-left:auto">
+                    {{ '● live' if p.status == 'live' else '◌ wip' }}
+                  </span>
+                </div>
+                <div class="project-genre">
+                  {% for t in p.tags %}<span class="genre-tag">{{ t }}</span>{% endfor %}
+                </div>
+                <div class="db-proj-actions">
+                  <a href="/project/{{ p.id }}/edit" class="db-act-btn">수정</a>
+                  <button class="db-act-btn db-act-del" onclick="confirmDelete(this)"
+                          data-id="{{ p.id }}" data-title="{{ p.name }}">삭제</button>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+      </div><!-- /content-area -->
+
+      <!-- Sidebar (재사용) -->
+      <aside class="sidebar">
+        <nav class="sidebar-nav">
+          <button class="snav-item active" onclick="window.location.href='/dashboard'">
+            <div class="snav-thumb snav-thumb-home">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            </div>
+            <span class="snav-label">대시보드</span>
+          </button>
+          <button class="snav-item" onclick="window.location.href='/post/new'">
+            <div class="snav-thumb snav-thumb-posts">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <span class="snav-label">새 글</span>
+          </button>
+          <button class="snav-item" onclick="window.location.href='/settings'">
+            <div class="snav-thumb snav-thumb-projects">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+            <span class="snav-label">설정</span>
+          </button>
+        </nav>
+        <div class="sidebar-bottom">
+          <button class="sidebar-all-btn" onclick="window.location.href='/'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
+            홈으로
+          </button>
+        </div>
+      </aside>
+
+    </div><!-- /main-layout -->
+
+    <footer class="site-footer">
+      <span>© 2025 Your Name</span>
+      <span class="footer-sep">·</span>
+      <span>DevLog Dashboard</span>
+    </footer>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-icon">🗑️</div>
+    <div class="modal-title">정말 삭제하시겠어요?</div>
+    <div class="modal-body" id="modal-body">이 항목을 삭제합니다.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">취소</button>
+      <button class="btn-danger" id="modal-confirm">삭제</button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', path='js/main.js') }}"></script>
+<script src="{{ url_for('static', path='js/main.append.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    initTrafficLights();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>회원가입 — DevLog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.append.css') }}">
+</head>
+<body class="auth-body">
+
+<div class="macos-window auth-window auth-window-wide">
+
+  <div class="macos-titlebar">
+    <div class="traffic-lights">
+      <button class="tl tl-close" onclick="history.back()"></button>
+      <button class="tl tl-min"   onclick="void(0)"></button>
+      <button class="tl tl-max"   onclick="void(0)"></button>
+    </div>
+    <span class="macos-title">devlog — 회원가입</span>
+  </div>
+
+  <div class="auth-shell">
+
+    <!-- Left branding (재사용) -->
+    <div class="auth-left">
+      <div class="auth-brand">
+        <span class="site-logo">
+          <span class="logo-bracket">[</span>DEV<span class="logo-accent">LOG</span><span class="logo-bracket">]</span>
+        </span>
+        <p class="auth-brand-desc">함께 만들어가는<br>개발 기록.</p>
+      </div>
+      <div class="auth-left-deco">
+        <div class="deco-grid"></div>
+        <div class="deco-glow"></div>
+      </div>
+    </div>
+
+    <!-- Right: signup form -->
+    <div class="auth-right">
+      <div class="auth-form-wrap">
+        <h2 class="auth-title">계정 만들기</h2>
+        <p class="auth-subtitle">아래 정보를 입력해 시작하세요</p>
+
+        {% if message %}
+        <div class="flash flash-{{ message_type | default('error') }}">{{ message }}</div>
+        {% endif %}
+
+        <form class="auth-form" id="signup-form" method="POST" action="/signup"
+              enctype="multipart/form-data">
+
+          <!-- Profile Image Upload -->
+          <div class="form-group">
+            <label class="form-label">프로필 이미지 <span class="form-label-opt">(선택)</span></label>
+            <div class="avatar-upload" id="avatar-upload">
+              <div class="avatar-preview" id="avatar-preview">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              </div>
+              <div class="avatar-upload-info">
+                <span class="avatar-upload-label">클릭하거나 드래그하여 업로드</span>
+                <span class="avatar-upload-hint">PNG, JPG, WEBP · 최대 2MB</span>
+              </div>
+              <input type="file" name="profile_image" id="profile-image"
+                     accept="image/png,image/jpeg,image/webp" hidden/>
+            </div>
+            <span class="form-error" id="err-img"></span>
+          </div>
+
+          <!-- Username (display name) -->
+          <div class="form-group" id="fg-uname">
+            <label class="form-label" for="username_display">사용자 이름 <span class="form-label-opt">(화면에 표시)</span></label>
+            <div class="input-wrap">
+              <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input class="form-input" id="username_display" name="username_display" type="text"
+                     placeholder="홍길동"
+                     value="{{ form.username_display | default('') }}"
+                     maxlength="20" required/>
+            </div>
+            <span class="form-error" id="err-uname"></span>
+          </div>
+
+          <!-- ID (login id) -->
+          <div class="form-group" id="fg-id">
+            <label class="form-label" for="username">아이디 <span class="form-label-opt">(로그인 시 사용)</span></label>
+            <div class="input-wrap">
+              <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              <input class="form-input" id="username" name="username" type="text"
+                     placeholder="영문, 숫자 4~20자"
+                     value="{{ form.username | default('') }}"
+                     pattern="[a-zA-Z0-9_]{4,20}"
+                     autocomplete="username" required/>
+              <span class="input-status" id="id-status"></span>
+            </div>
+            <span class="form-error" id="err-id"></span>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group" id="fg-pw">
+            <label class="form-label" for="password">비밀번호</label>
+            <div class="input-wrap">
+              <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input class="form-input" id="password" name="password" type="password"
+                     placeholder="8자 이상, 영문+숫자"
+                     autocomplete="new-password" required/>
+              <button type="button" class="pw-toggle" data-target="password">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <!-- Strength bar -->
+            <div class="pw-strength">
+              <div class="pw-strength-bar" id="pw-strength-bar"></div>
+            </div>
+            <span class="form-error" id="err-pw"></span>
+          </div>
+
+          <!-- Password Confirm -->
+          <div class="form-group" id="fg-pw2">
+            <label class="form-label" for="password2">비밀번호 확인</label>
+            <div class="input-wrap">
+              <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input class="form-input" id="password2" name="password2" type="password"
+                     placeholder="비밀번호 다시 입력"
+                     autocomplete="new-password" required/>
+              <button type="button" class="pw-toggle" data-target="password2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+              <span class="input-status" id="pw2-status"></span>
+            </div>
+            <span class="form-error" id="err-pw2"></span>
+          </div>
+
+          <button type="submit" class="btn-auth" id="btn-signup">
+            <span class="btn-auth-text">가입하기</span>
+            <span class="btn-auth-loader" style="display:none">
+              <svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+            </span>
+          </button>
+        </form>
+
+        <div class="auth-footer-links">
+          <span>이미 계정이 있으신가요?</span>
+          <a href="/login" class="auth-link">로그인</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="{{ url_for('static', path='js/main.js') }}"></script>
+<script src="{{ url_for('static', path='js/main.append.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    initTrafficLights();
+    initPasswordToggle();
+    initSignupValidation();
+    initAvatarUpload();
+  });
+</script>
+</body>
+</html>

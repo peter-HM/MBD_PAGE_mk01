@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ '프로젝트 수정' if project else '새 프로젝트' }} — DevLog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.append.css') }}">
+  <style>
+  /* ── project_form 추가 CSS ── */
+
+  /* 전체 레이아웃: 좌측 폼 / 우측 미리보기 */
+  .prj-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── 좌측 입력 패널 ── */
+  .prj-editor {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.8rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface3) transparent;
+    border-right: 1px solid var(--border);
+  }
+  .prj-editor::-webkit-scrollbar { width: 5px; }
+  .prj-editor::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+
+  /* 프로젝트 이름 (크게) */
+  .prj-name-wrap { position: relative; }
+  .prj-name-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 1.55rem;
+    font-weight: 700;
+    padding: .4rem 0 .6rem;
+    outline: none;
+    transition: border-color .18s;
+    letter-spacing: -.01em;
+  }
+  .prj-name-input::placeholder { color: var(--muted); opacity: .35; }
+  .prj-name-input:focus { border-color: rgba(26,140,255,.45); }
+
+  /* 한 줄 소개 */
+  .prj-summary-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: .88rem;
+    padding: .65rem .9rem;
+    outline: none;
+    resize: none;
+    transition: border-color .18s;
+    line-height: 1.5;
+  }
+  .prj-summary-input::placeholder { color: var(--muted); opacity: .45; }
+  .prj-summary-input:focus { border-color: rgba(26,140,255,.4); }
+
+  /* 섹션 구분 레이블 */
+  .prj-section-label {
+    font-size: .65rem;
+    color: var(--muted);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: .55rem;
+  }
+  .prj-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* 상세 설명 */
+  .prj-desc-textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: .85rem;
+    line-height: 1.75;
+    padding: .85rem 1rem;
+    resize: vertical;
+    min-height: 140px;
+    outline: none;
+    transition: border-color .18s;
+  }
+  .prj-desc-textarea::placeholder { color: var(--muted); opacity: .4; }
+  .prj-desc-textarea:focus { border-color: rgba(26,140,255,.4); }
+
+  /* 메타 그리드 (2열) */
+  .prj-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .9rem;
+  }
+
+  /* 상태 선택 — segmented control */
+  .prj-status-group {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .prj-status-option { position: relative; }
+  .prj-status-option input[type="radio"] {
+    position: absolute; opacity: 0; width: 0; height: 0;
+  }
+  .prj-status-option label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    padding: .55rem .4rem;
+    background: var(--surface);
+    font-size: .72rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .prj-status-option input:checked + label {
+    background: var(--surface2);
+    color: var(--text);
+  }
+  .prj-status-option label:hover { background: var(--surface2); color: var(--text); }
+
+  /* 상태 점 */
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-planning   { background: #6B7080; }
+  .dot-in_progress{ background: #FF9500; box-shadow: 0 0 5px rgba(255,149,0,.4); }
+  .dot-testing    { background: #FFBD2E; box-shadow: 0 0 5px rgba(255,189,46,.4); }
+  .dot-done       { background: #28C840; box-shadow: 0 0 5px rgba(40,200,64,.4); }
+
+  /* 링크 입력 행 */
+  .prj-link-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .9rem;
+  }
+
+  .prj-link-item { display: flex; flex-direction: column; gap: .35rem; }
+
+  .prj-link-input-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: border-color .18s;
+  }
+  .prj-link-input-wrap:focus-within { border-color: rgba(26,140,255,.4); }
+
+  .prj-link-prefix {
+    padding: 0 .75rem;
+    font-size: .72rem;
+    color: var(--muted);
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+    height: 36px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .prj-link-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: .82rem;
+    padding: .45rem .75rem;
+    outline: none;
+    min-width: 0;
+  }
+  .prj-link-input::placeholder { color: var(--muted); opacity: .4; }
+
+  /* 썸네일 업로드 (project용 — 가로형) */
+  .prj-thumb-zone {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .9rem 1rem;
+    background: var(--surface);
+    border: 1px dashed rgba(255,255,255,.12);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color .18s, background .18s;
+  }
+  .prj-thumb-zone:hover,
+  .prj-thumb-zone.drag-over {
+    border-color: rgba(26,140,255,.4);
+    background: rgba(26,140,255,.04);
+  }
+
+  .prj-thumb-preview-box {
+    width: 100px; height: 64px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    font-size: 1.6rem;
+  }
+  .prj-thumb-preview-box img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+
+  .prj-thumb-info { flex: 1; min-width: 0; }
+  .prj-thumb-label {
+    display: block;
+    font-size: .78rem;
+    color: var(--text);
+    margin-bottom: .2rem;
+  }
+  .prj-thumb-hint { font-size: .65rem; color: var(--muted); }
+
+  .prj-thumb-actions { display: flex; gap: .5rem; flex-shrink: 0; }
+
+  /* ── 우측 미리보기 패널 ── */
+  .prj-preview-panel {
+    width: 280px;
+    flex-shrink: 0;
+    background: var(--surface);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface3) transparent;
+  }
+  .prj-preview-panel::-webkit-scrollbar { width: 4px; }
+  .prj-preview-panel::-webkit-scrollbar-thumb { background: var(--surface3); }
+
+  .prj-preview-header {
+    padding: .9rem 1.1rem .6rem;
+    border-bottom: 1px solid var(--border);
+    font-size: .62rem;
+    color: var(--muted);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  .prj-preview-body { padding: 1.1rem; flex: 1; }
+
+  /* 미리보기 카드 */
+  .prj-card-preview {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+
+  .prj-card-thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .prj-card-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    position: absolute; inset: 0;
+  }
+  .prj-card-thumb-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,.5));
+  }
+  .prj-card-thumb-emoji { position: relative; z-index: 1; opacity: .25; }
+
+  .prj-card-body { padding: .9rem; }
+
+  .prj-card-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .62rem;
+    color: var(--muted);
+    margin-bottom: .5rem;
+  }
+
+  .prj-card-name {
+    font-family: var(--font-display);
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: .35rem;
+    line-height: 1.3;
+    min-height: 1.2em;
+  }
+
+  .prj-card-summary {
+    font-size: .73rem;
+    color: var(--muted);
+    line-height: 1.55;
+    margin-bottom: .7rem;
+    min-height: 2.2em;
+  }
+
+  .prj-card-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+    min-height: 1.5em;
+  }
+  .prj-card-stack-tag {
+    font-size: .6rem;
+    padding: .15rem .5rem;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--muted);
+    background: var(--surface);
+  }
+
+  /* 미리보기 아래 메타 */
+  .prj-preview-meta {
+    padding: .9rem 1.1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+  }
+  .prj-preview-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: .68rem;
+  }
+  .prj-preview-meta-key { color: var(--muted); }
+  .prj-preview-meta-val { color: var(--text); }
+
+  /* 반응형 */
+  @media (max-width: 860px) {
+    .prj-preview-panel { display: none; }
+    .prj-editor { border-right: none; }
+    .prj-meta-grid, .prj-link-row { grid-template-columns: 1fr; }
+    .prj-status-group { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .prj-editor { padding: 1.2rem; }
+    .prj-name-input { font-size: 1.2rem; }
+  }
+  </style>
+</head>
+<body>
+
+<div class="macos-window macos-window-wide">
+
+  <!-- macOS Titlebar -->
+  <div class="macos-titlebar">
+    <div class="traffic-lights">
+      <button class="tl tl-close" onclick="history.back()"></button>
+      <button class="tl tl-min"   onclick="void(0)"></button>
+      <button class="tl tl-max"   onclick="void(0)"></button>
+    </div>
+    <span class="macos-title">devlog — {{ '프로젝트 수정' if project else '새 프로젝트 작성' }}</span>
+    <div class="titlebar-actions">
+      <button class="tb-action-btn" id="prj-preview-toggle">미리보기</button>
+      <button class="tb-action-btn tb-action-primary" form="project-form" type="submit">
+        {{ '저장하기' if project else '생성하기' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="app-shell">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <a href="/" class="site-logo" style="text-decoration:none">
+          <span class="logo-bracket">[</span>DEV<span class="logo-accent">LOG</span><span class="logo-bracket">]</span>
+        </a>
+        <span class="topbar-divider"></span>
+        <span class="topbar-subtitle">{{ '프로젝트 수정' if project else '새 프로젝트' }}</span>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-badge">{{ current_user.username | default('작성자') }}</span>
+        <a href="/" class="btn-login">← 홈으로</a>
+      </div>
+    </header>
+
+    <!-- Project Form Layout -->
+    <div class="prj-layout">
+
+      <!-- ── 좌측: 입력 폼 ── -->
+      <div class="prj-editor" id="prj-editor">
+        <form id="project-form" method="POST"
+              action="{{ '/project/' ~ project.id ~ '/edit' if project else '/project/new' }}"
+              enctype="multipart/form-data">
+
+          <!-- 1. 프로젝트 이름 -->
+          <div class="prj-name-wrap">
+            <input class="prj-name-input"
+                   id="prj-name"
+                   name="name"
+                   type="text"
+                   placeholder="프로젝트 이름을 입력하세요"
+                   value="{{ project.name | default('') }}"
+                   maxlength="60"
+                   required/>
+          </div>
+
+          <!-- 2. 한 줄 소개 -->
+          <div>
+            <div class="prj-section-label">한 줄 소개</div>
+            <textarea class="prj-summary-input"
+                      id="prj-summary"
+                      name="summary"
+                      placeholder="프로젝트를 한 문장으로 설명해주세요"
+                      maxlength="120"
+                      rows="2">{{ project.summary | default('') }}</textarea>
+          </div>
+
+          <!-- 4. 대표 이미지 -->
+          <div>
+            <div class="prj-section-label">대표 이미지</div>
+            <div class="prj-thumb-zone" id="prj-thumb-zone">
+              <div class="prj-thumb-preview-box" id="prj-thumb-box">
+                {% if project and project.thumbnail %}
+                  <img src="{{ project.thumbnail }}" alt="썸네일" id="prj-thumb-img"/>
+                {% else %}
+                  <span id="prj-thumb-emoji">🚀</span>
+                {% endif %}
+              </div>
+              <div class="prj-thumb-info">
+                <span class="prj-thumb-label">클릭하거나 드래그하여 업로드</span>
+                <span class="prj-thumb-hint">PNG, JPG, WEBP · 권장 1200×630 · 최대 5MB</span>
+              </div>
+              <div class="prj-thumb-actions">
+                <button type="button" class="pf-thumb-btn" id="prj-thumb-btn">
+                  {{ '변경' if project and project.thumbnail else '업로드' }}
+                </button>
+                <button type="button" class="pf-thumb-remove" id="prj-thumb-remove"
+                        style="{{ 'display:inline-flex' if project and project.thumbnail else 'display:none' }}">
+                  제거
+                </button>
+              </div>
+              <input type="file" name="thumbnail" id="prj-thumb-file"
+                     accept="image/png,image/jpeg,image/webp" hidden/>
+            </div>
+          </div>
+
+          <!-- 6. 프로젝트 상태 -->
+          <div>
+            <div class="prj-section-label">프로젝트 상태</div>
+            <div class="prj-status-group" id="prj-status-group">
+              {% set cur_status = project.status if project else 'planning' %}
+              {% for s in [
+                ('planning',    'dot-planning',    'Planning'),
+                ('in_progress', 'dot-in_progress', 'In Progress'),
+                ('testing',     'dot-testing',     'Testing'),
+                ('done',        'dot-done',         'Done'),
+              ] %}
+              <div class="prj-status-option">
+                <input type="radio" name="status"
+                       id="status-{{ s[0] }}"
+                       value="{{ s[0] }}"
+                       {{ 'checked' if cur_status == s[0] else '' }}/>
+                <label for="status-{{ s[0] }}">
+                  <span class="status-dot {{ s[1] }}"></span>
+                  {{ s[2] }}
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- 5. 기술 스택 + 공개여부 -->
+          <div class="prj-meta-grid">
+            <div>
+              <div class="prj-section-label">기술 스택</div>
+              <input class="pf-input-sm" style="width:100%"
+                     id="prj-stack"
+                     name="stack"
+                     type="text"
+                     placeholder="FastAPI, Docker, PostgreSQL..."
+                     value="{{ project.stack | default('') }}"/>
+            </div>
+            <div>
+              <div class="prj-section-label">공개 여부</div>
+              <div class="pf-toggle-wrap" style="height:36px">
+                <label class="pf-toggle">
+                  <input type="checkbox" name="is_public" id="prj-is-public"
+                         {{ 'checked' if not project or project.is_public else '' }}/>
+                  <span class="pf-toggle-track"></span>
+                </label>
+                <span class="pf-toggle-label" id="prj-visibility-label">
+                  {{ '공개' if not project or project.is_public else '비공개' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 8~9. 링크 -->
+          <div>
+            <div class="prj-section-label">링크</div>
+            <div class="prj-link-row">
+              <div class="prj-link-item">
+                <label class="form-label">데모</label>
+                <div class="prj-link-input-wrap">
+                  <span class="prj-link-prefix">🔗</span>
+                  <input class="prj-link-input"
+                         name="demo_url"
+                         type="url"
+                         placeholder="https://your-demo.com"
+                         value="{{ project.demo_url | default('') }}"
+                         oninvalid="this.setCustomValidity('https:// 를 포함한 올바른 URL을 입력하세요.')"
+                         oninput="this.setCustomValidity('')"/>
+                </div>
+              </div>
+              <div class="prj-link-item">
+                <label class="form-label">GitHub</label>
+                <div class="prj-link-input-wrap">
+                  <span class="prj-link-prefix">⌥ gh</span>
+                  <input class="prj-link-input"
+                         name="github_url"
+                         type="url"
+                         placeholder="https://github.com/you/repo"
+                         value="{{ project.github_url | default('') }}"
+                         oninvalid="this.setCustomValidity('https:// 를 포함한 올바른 URL을 입력하세요.')"
+                         oninput="this.setCustomValidity('')"/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. 상세 설명 -->
+          <div>
+            <div class="prj-section-label">상세 설명</div>
+            <textarea class="prj-desc-textarea"
+                      name="description"
+                      id="prj-desc"
+                      placeholder="프로젝트 배경, 주요 기능, 아키텍처, 배운 점 등을 자유롭게 작성하세요.">{{ project.description | default('') }}</textarea>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- ── 우측: 카드 미리보기 ── -->
+      <aside class="prj-preview-panel" id="prj-preview-panel">
+        <div class="prj-preview-header">카드 미리보기</div>
+        <div class="prj-preview-body">
+          <div class="prj-card-preview">
+
+            <!-- 썸네일 -->
+            <div class="prj-card-thumb" id="pc-thumb">
+              <img id="pc-thumb-img"
+                   src="{{ project.thumbnail | default('') }}"
+                   alt=""
+                   style="{{ '' if project and project.thumbnail else 'display:none' }}"/>
+              <div class="prj-card-thumb-overlay"></div>
+              <span class="prj-card-thumb-emoji" id="pc-thumb-emoji"
+                    style="{{ 'display:none' if project and project.thumbnail else '' }}">🚀</span>
+            </div>
+
+            <div class="prj-card-body">
+              <!-- 상태 -->
+              <div class="prj-card-status" id="pc-status">
+                <span class="status-dot dot-planning" id="pc-status-dot"></span>
+                <span id="pc-status-label">Planning</span>
+              </div>
+              <!-- 이름 -->
+              <div class="prj-card-name" id="pc-name">
+                {{ project.name | default('프로젝트 이름') }}
+              </div>
+              <!-- 한 줄 소개 -->
+              <div class="prj-card-summary" id="pc-summary">
+                {{ project.summary | default('한 줄 소개가 여기에 표시됩니다.') }}
+              </div>
+              <!-- 스택 태그 -->
+              <div class="prj-card-stack" id="pc-stack">
+                {% for tag in (project.stack | default('') ).split(',') if tag.strip() %}
+                <span class="prj-card-stack-tag">{{ tag.strip() }}</span>
+                {% else %}
+                <span class="prj-card-stack-tag" style="opacity:.35">스택</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 미리보기 하단 메타 정보 -->
+        <div class="prj-preview-meta">
+          <div class="prj-preview-meta-row">
+            <span class="prj-preview-meta-key">공개 여부</span>
+            <span class="prj-preview-meta-val" id="pc-visibility">
+              {{ '공개' if not project or project.is_public else '비공개' }}
+            </span>
+          </div>
+          <div class="prj-preview-meta-row">
+            <span class="prj-preview-meta-key">데모</span>
+            <span class="prj-preview-meta-val" id="pc-demo">—</span>
+          </div>
+          <div class="prj-preview-meta-row">
+            <span class="prj-preview-meta-key">GitHub</span>
+            <span class="prj-preview-meta-val" id="pc-github">—</span>
+          </div>
+        </div>
+      </aside>
+
+    </div><!-- /prj-layout -->
+
+    <footer class="site-footer">
+      <span>© 2025 Your Name</span>
+      <span class="footer-sep">·</span>
+      <span>Built with FastAPI &amp; Jinja2</span>
+      <span class="footer-sep">·</span>
+      <span>Deployed on AWS</span>
+    </footer>
+
+  </div><!-- /app-shell -->
+</div><!-- /macos-window -->
+
+<script src="{{ url_for('static', path='js/main.js') }}"></script>
+<script src="{{ url_for('static', path='js/main.append.js') }}"></script>
+<script>
+// project_form 추가 JS
+
+/* 상태별 설정 */
+const STATUS_CONFIG = {
+  planning:    { dot: 'dot-planning',    label: 'Planning' },
+  in_progress: { dot: 'dot-in_progress', label: 'In Progress' },
+  testing:     { dot: 'dot-testing',     label: 'Testing' },
+  done:        { dot: 'dot-done',        label: 'Done' },
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTrafficLights();
+  initProjectForm();
+});
+
+function initProjectForm() {
+
+  // ── 실시간 미리보기 바인딩 ──────────────────────────────────
+
+  // 프로젝트 이름
+  const nameInput = document.getElementById('prj-name');
+  const pcName    = document.getElementById('pc-name');
+  nameInput?.addEventListener('input', () => {
+    pcName.textContent = nameInput.value.trim() || '프로젝트 이름';
+  });
+
+  // 한 줄 소개
+  const summaryInput = document.getElementById('prj-summary');
+  const pcSummary    = document.getElementById('pc-summary');
+  summaryInput?.addEventListener('input', () => {
+    pcSummary.textContent = summaryInput.value.trim() || '한 줄 소개가 여기에 표시됩니다.';
+  });
+
+  // 기술 스택
+  const stackInput = document.getElementById('prj-stack');
+  const pcStack    = document.getElementById('pc-stack');
+  stackInput?.addEventListener('input', () => {
+    const tags = stackInput.value.split(',').map(t => t.trim()).filter(Boolean);
+    pcStack.innerHTML = tags.length
+      ? tags.map(t => `<span class="prj-card-stack-tag">${t}</span>`).join('')
+      : '<span class="prj-card-stack-tag" style="opacity:.35">스택</span>';
+  });
+
+  // 상태 변경
+  document.querySelectorAll('[name="status"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (!radio.checked) return;
+      const cfg = STATUS_CONFIG[radio.value];
+      if (!cfg) return;
+      const dot   = document.getElementById('pc-status-dot');
+      const label = document.getElementById('pc-status-label');
+      dot.className   = `status-dot ${cfg.dot}`;
+      label.textContent = cfg.label;
+    });
+  });
+
+  // 공개여부 토글
+  const pubToggle  = document.getElementById('prj-is-public');
+  const pubLabel   = document.getElementById('prj-visibility-label');
+  const pcVis      = document.getElementById('pc-visibility');
+  pubToggle?.addEventListener('change', () => {
+    const isPublic = pubToggle.checked;
+    pubLabel.textContent = isPublic ? '공개' : '비공개';
+    pcVis.textContent    = isPublic ? '공개' : '비공개';
+  });
+
+  // 링크 미리보기
+  const demoInput   = document.querySelector('[name="demo_url"]');
+  const githubInput = document.querySelector('[name="github_url"]');
+  const pcDemo      = document.getElementById('pc-demo');
+  const pcGithub    = document.getElementById('pc-github');
+
+  function truncateUrl(url) {
+    if (!url) return '—';
+    try { return new URL(url).hostname; } catch { return url.slice(0, 20) + '…'; }
+  }
+
+  demoInput?.addEventListener('input', () => {
+    pcDemo.textContent = truncateUrl(demoInput.value.trim());
+  });
+  githubInput?.addEventListener('input', () => {
+    const val = githubInput.value.trim();
+    pcGithub.textContent = val ? val.replace('https://github.com/', '') || '—' : '—';
+  });
+
+  // ── 썸네일 업로드 ──────────────────────────────────────────
+  const zone    = document.getElementById('prj-thumb-zone');
+  const fileIn  = document.getElementById('prj-thumb-file');
+  const btn     = document.getElementById('prj-thumb-btn');
+  const rmBtn   = document.getElementById('prj-thumb-remove');
+  const box     = document.getElementById('prj-thumb-box');     // 폼 내 미리보기
+  const cardImg = document.getElementById('pc-thumb-img');      // 카드 미리보기
+  const emoji   = document.getElementById('pc-thumb-emoji');
+
+  // 클릭 업로드
+  zone?.addEventListener('click', e => {
+    if (e.target === rmBtn || rmBtn?.contains(e.target)) return;
+    fileIn?.click();
+  });
+
+  btn?.addEventListener('click', e => { e.stopPropagation(); fileIn?.click(); });
+
+  fileIn?.addEventListener('change', () => {
+    const file = fileIn.files?.[0];
+    if (file) handleProjectThumb(file);
+  });
+
+  // 드래그 앤 드롭
+  zone?.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone?.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone?.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files?.[0];
+    if (file?.type.startsWith('image/')) handleProjectThumb(file);
+  });
+
+  // 이미지 처리
+  function handleProjectThumb(file) {
+    if (file.size > 5 * 1024 * 1024) {
+      alert('파일 크기는 5MB 이하여야 합니다.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      const src = e.target.result;
+
+      // 폼 내 미리보기
+      box.innerHTML = `<img src="${src}" alt="썸네일" style="width:100%;height:100%;object-fit:cover;border-radius:6px;"/>`;
+
+      // 카드 미리보기
+      cardImg.src = src;
+      cardImg.style.display = '';
+      if (emoji) emoji.style.display = 'none';
+
+      btn.textContent = '변경';
+      if (rmBtn) rmBtn.style.display = 'inline-flex';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // 이미지 제거
+  rmBtn?.addEventListener('click', e => {
+    e.stopPropagation();
+    box.innerHTML = '<span id="prj-thumb-emoji-form">🚀</span>';
+    cardImg.src   = '';
+    cardImg.style.display = 'none';
+    if (emoji) emoji.style.display = '';
+    fileIn.value  = '';
+    btn.textContent = '업로드';
+    rmBtn.style.display = 'none';
+  });
+
+  // ── 미리보기 패널 토글 (모바일 대응) ──────────────────────
+  const previewToggle = document.getElementById('prj-preview-toggle');
+  const previewPanel  = document.getElementById('prj-preview-panel');
+  let previewOn = true; // 기본 열림
+
+  previewToggle?.addEventListener('click', () => {
+    previewOn = !previewOn;
+    previewPanel.style.display = previewOn ? '' : 'none';
+    previewToggle.style.color  = previewOn ? 'var(--accent)' : '';
+  });
+
+  // ── 초기값 미리보기 반영 (수정 모드) ──────────────────────
+  // 상태 초기값
+  const checkedStatus = document.querySelector('[name="status"]:checked');
+  if (checkedStatus) {
+    const cfg = STATUS_CONFIG[checkedStatus.value];
+    if (cfg) {
+      document.getElementById('pc-status-dot').className  = `status-dot ${cfg.dot}`;
+      document.getElementById('pc-status-label').textContent = cfg.label;
+    }
+  }
+
+  // 링크 초기값
+  if (demoInput?.value)   pcDemo.textContent   = truncateUrl(demoInput.value);
+  if (githubInput?.value) pcGithub.textContent  = githubInput.value.replace('https://github.com/', '') || '—';
+
+  // 스택 초기값
+  if (stackInput?.value) {
+    const tags = stackInput.value.split(',').map(t => t.trim()).filter(Boolean);
+    if (tags.length) {
+      pcStack.innerHTML = tags.map(t => `<span class="prj-card-stack-tag">${t}</span>`).join('');
+    }
+  }
+}
+</script>
+</body>
+</html>
