@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>회원가입 — DevLog</title>
+  <title>회원가입</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}"/>
   <link rel="stylesheet" href="{{ url_for('static', path='css/style.append.css') }}">
+  <link rel="icon" href="{{ url_for('static', path='images/mbd_favicon.svg') }}">
 </head>
 <body class="auth-body">
 
@@ -15,11 +16,11 @@
 
   <div class="macos-titlebar">
     <div class="traffic-lights">
-      <button class="tl tl-close" onclick="history.back()"></button>
-      <button class="tl tl-min"   onclick="void(0)"></button>
-      <button class="tl tl-max"   onclick="void(0)"></button>
+      <button class="tl tl-close" disabled onclick="history.back()"></button>
+      <button class="tl tl-min"  disabled  onclick="void(0)"></button>
+      <button class="tl tl-max"  disabled  onclick="void(0)"></button>
     </div>
-    <span class="macos-title">devlog — 회원가입</span>
+    <span class="macos-title">회원가입</span>
   </div>
 
   <div class="auth-shell">
@@ -28,9 +29,9 @@
     <div class="auth-left">
       <div class="auth-brand">
         <span class="site-logo">
-          <span class="logo-bracket">[</span>DEV<span class="logo-accent">LOG</span><span class="logo-bracket">]</span>
+          <span class="logo-bracket">[</span>Oops<span class="logo-accent">First</span><span class="logo-bracket">]</span>
         </span>
-        <p class="auth-brand-desc">함께 만들어가는<br>개발 기록.</p>
+        <p class="auth-brand-desc">함께 넘어지는<br>다양한 기록.</p>
       </div>
       <div class="auth-left-deco">
         <div class="deco-grid"></div>

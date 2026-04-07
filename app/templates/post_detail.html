@@ -7,7 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}"/>
-<link rel="stylesheet" href="{{ url_for('static', path='css/style.append.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.append.css') }}"/>
+  <link rel="icon" href="{{ url_for('static', path='images/mbd_favicon.svg') }}">
   <style>
     /* ── POST DETAIL 전용 스타일 ── */
 
@@ -486,6 +487,25 @@
       .pd-header  { padding: 1.2rem 1.2rem .9rem; }
       .pd-nav { grid-template-columns: 1fr; }
     }
+
+    .topbar-right .topbar-badge {
+      font-size: .78rem;
+      padding: .32rem .95rem;
+      border-radius: 999px;
+      font-weight: 600;
+      letter-spacing: .02em;
+      color: var(--accent);
+      background: rgba(26,140,255,.10);
+      border: 1px solid rgba(26,140,255,.28);
+    }
+
+    .pd-author {
+    justify-content: flex-start;
+    }
+
+    .pd-author-name {
+      margin-bottom: 0;
+    }
   </style>
 </head>
 <body>
@@ -495,18 +515,11 @@
   <!-- macOS Titlebar -->
   <div class="macos-titlebar">
     <div class="traffic-lights">
-      <button class="tl tl-close" onclick="history.back()"></button>
-      <button class="tl tl-min"   onclick="void(0)"></button>
-      <button class="tl tl-max"   onclick="void(0)"></button>
+      <button class="tl tl-close" disabled onclick="history.back()"></button>
+      <button class="tl tl-min"  disabled  onclick="void(0)"></button>
+      <button class="tl tl-max"  disabled  onclick="void(0)"></button>
     </div>
     <span class="macos-title">devlog — {{ post.title | default('포스트') | truncate(40) }}</span>
-    {% if is_owner | default(false) %}
-    <div class="titlebar-actions">
-      <a href="/post/{{ post.id }}/edit" class="tb-action-btn">수정</a>
-      <button class="tb-action-btn" style="color:#FF5F57"
-              onclick="confirmDeletePost('{{ post.id }}', '{{ post.title }}')">삭제</button>
-    </div>
-    {% endif %}
   </div>
 
   <div class="app-shell">
@@ -521,12 +534,60 @@
         <span class="topbar-subtitle">{{ post.category | default('포스트') }}</span>
       </div>
       <div class="topbar-right">
-        <span class="topbar-badge">{{ post.category | default('DevOps') }}</span>
+        <span class="topbar-badge">{{ post.cat | default('notice') }} / {{ post.cat_detail | default('aws') }}</span>
+      
         {% if current_user %}
-        <span class="btn-login">{{ current_user.username }}</span>
+        <div style="display:flex; align-items:center; gap:.7rem;">
+          <div style="display:flex; align-items:center; gap:.5rem;">
+            {% if current_user.role == 'mgr' %}
+            <span style="
+              display:inline-flex;
+              align-items:center;
+              justify-content:center;
+              padding:.22rem .65rem;
+              border-radius:999px;
+              background: rgba(26,140,255,.12);
+              border: 1px solid rgba(26,140,255,.25);
+              color: var(--accent);
+              font-size:.68rem;
+              font-weight:600;
+              letter-spacing:.04em;
+            ">용사</span>
+            {% else %}
+            <span style="
+              display:inline-flex;
+              align-items:center;
+              justify-content:center;
+              width:24px;
+              height:24px;
+              border-radius:6px;
+              background: var(--accent-dim);
+              border: 1px solid rgba(26,140,255,.25);
+              color: var(--accent);
+              font-size:.62rem;
+              font-weight:700;
+              letter-spacing:.04em;
+            ">★</span>
+            {% endif %}
+      
+            <span style="
+              font-size:.78rem;
+              font-weight:500;
+              color: var(--text);
+              letter-spacing:.02em;
+            ">
+              {{ current_user.nickname or current_user.username }}
+            </span>
+          </div>
+      
+          <a href="/logout" class="btn-login" style="text-decoration:none;">로그아웃</a>
+        </div>
         {% else %}
-        <a href="/login" class="btn-login">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <a href="/login" class="btn-login" style="text-decoration:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
           로그인
         </a>
         {% endif %}
@@ -649,12 +710,7 @@ async def post_detail(id: int):
               {{ post.author_initials | default('YN') }}
             </div>
             <div>
-              <div class="pd-author-name">{{ post.author_name | default('Your Name') }}</div>
-              <div class="pd-author-bio">{{ post.author_bio | default('DevOps 엔지니어. AWS · Docker · Terraform을 좋아합니다.') }}</div>
-            </div>
-            <div class="pd-author-links">
-              <a href="/" class="plink" title="홈">🏠</a>
-              <a href="#" class="plink" title="GitHub">⌥</a>
+              <div class="pd-author-name">{{ post.author_name | default(current_user.nickname if current_user else 'User') }}</div>
             </div>
           </div>
 

@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>로그인 — DevLog</title>
+  <title>로그인</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}"/>
   <link rel="stylesheet" href="{{ url_for('static', path='css/style.append.css') }}">
+  <link rel="icon" href="{{ url_for('static', path='images/mbd_favicon.svg') }}">
 </head>
 </head>
 <body class="auth-body">
@@ -17,11 +18,11 @@
   <!-- macOS Titlebar -->
   <div class="macos-titlebar">
     <div class="traffic-lights">
-      <button class="tl tl-close"  onclick="history.back()"></button>
-      <button class="tl tl-min"    onclick="void(0)"></button>
-      <button class="tl tl-max"    onclick="void(0)"></button>
+      <button class="tl tl-close" disabled  onclick="history.back()"></button>
+      <button class="tl tl-min"  disabled   onclick="void(0)"></button>
+      <button class="tl tl-max"  disabled   onclick="void(0)"></button>
     </div>
-    <span class="macos-title">devlog — 로그인</span>
+    <span class="macos-title">로그인</span>
   </div>
 
   <!-- Auth Shell -->
@@ -31,9 +32,9 @@
     <div class="auth-left">
       <div class="auth-brand">
         <span class="site-logo">
-          <span class="logo-bracket">[</span>DEV<span class="logo-accent">LOG</span><span class="logo-bracket">]</span>
+          <span class="logo-bracket">[</span>Oops<span class="logo-accent">First</span><span class="logo-bracket">]</span>
         </span>
-        <p class="auth-brand-desc">인프라를 코드로,<br>배포를 자동으로.</p>
+        <p class="auth-brand-desc">실수는 가능한 빠르게,<br>복구는 더욱더 빠르게</p>
       </div>
       <div class="auth-left-deco">
         <div class="deco-grid"></div>

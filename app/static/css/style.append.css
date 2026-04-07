@@ -5,45 +5,55 @@
 
 /* ── AUTH PAGES ─────────────────────────────────────────────── */
 .auth-body {
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   min-height: 100vh;
+  padding: .75rem;
 }
 
 .auth-window {
-  width: 100%;
-  max-width: 820px;
+  width: min(92vw, 860px);
 }
 
 .auth-window-wide {
-  max-width: 860px;
+  max-width: 900px;
 }
 
 .auth-shell {
   display: grid;
   grid-template-columns: 1fr 1.1fr;
-  min-height: 520px;
+  min-height: calc(100vh - 1.5rem);
 }
 
 /* Left branding panel */
 .auth-left {
   background: linear-gradient(145deg, #0D1829 0%, #0C0D10 100%);
-  padding: 2.5rem;
+  padding: 2.5rem 2.8rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   position: relative;
   overflow: hidden;
   border-right: 1px solid var(--border);
 }
 
-.auth-brand { position: relative; z-index: 1; }
+.auth-brand {
+  position: relative;
+  z-index: 1;
+  transform: translateY(-6%);
+}
+
+.auth-left .site-logo {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
 
 .auth-brand-desc {
-  margin-top: 1rem;
-  font-size: .85rem;
-  color: var(--muted);
-  line-height: 1.7;
+  margin-top: 1.2rem;
+  font-size: 1rem;
+  color: #A6ACBD;
+  line-height: 1.8;
 }
 
 .auth-left-deco { position: absolute; inset: 0; pointer-events: none; }
@@ -309,7 +319,6 @@
 }
 
 /* ── POST FORM ───────────────────────────────────────────────── */
-.macos-window-wide { max-width: 1200px; }
 
 .titlebar-actions {
   margin-left: auto;

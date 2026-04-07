@@ -3,25 +3,26 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>DevLog</title>
+  <title>MDB</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}"/>
   <link rel="stylesheet" href="{{ url_for('static', path='css/style.append.css') }}">
+  <link rel="icon" href="{{ url_for('static', path='images/mbd_favicon.svg') }}">
 </head>
 <body>
 
 <!-- macOS Window Wrapper -->
-<div class="macos-window">
+<div class="macos-window macos-window-wide">
 
   <!-- macOS Title Bar (traffic lights) -->
   <div class="macos-titlebar">
     <div class="traffic-lights">
-      <button class="tl tl-close"   title="닫기"></button>
-      <button class="tl tl-min"     title="최소화"></button>
-      <button class="tl tl-max"     title="전체화면"></button>
+      <button class="tl tl-close" disabled  title="닫기"></button>
+      <button class="tl tl-min"   disabled  title="최소화"></button>
+      <button class="tl tl-max"  disabled   title="전체화면"></button>
     </div>
-    <span class="macos-title">devlog — 개인 포트폴리오</span>
+    <span class="macos-title">MBD - Must Buy Defender</span>
   </div>
 
   <!-- App Shell -->
@@ -38,8 +39,30 @@
       </div>
       <div class="topbar-right">
         {% if current_user %}
-        <div style="display:flex; align-items:center; gap:.6rem;">
-          <span class="topbar-badge">{{ current_user.nickname }}</span>
+        <div style="display:flex; align-items:center; gap:.7rem;">
+          <div style="display:flex; align-items:center; gap:.5rem;">
+            <span style="
+              display:inline-flex;
+              align-items:center;
+              justify-content:center;
+              width:24px;
+              height:24px;
+              border-radius:6px;
+              background: var(--accent-dim);
+              border: 1px solid rgba(26,140,255,.25);
+              color: var(--accent);
+              font-size:.62rem;
+              font-weight:700;
+              letter-spacing:.04em;
+            ">★</span>
+            <span style="
+              font-size:.78rem;
+              font-weight:500;
+              color: var(--text);
+              letter-spacing:.02em;
+            ">{{ current_user.nickname or current_user.username }}</span>
+          </div>
+        
           <a href="/logout" class="btn-login">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -75,17 +98,29 @@
           </div>
           <div class="hero-content">
             <div class="hero-eyebrow">
-              <span class="dot-live"></span> AWS · DevOps · Backend
+              <span class="dot-live"></span> Active
             </div>
             <h1 class="hero-title">
-              Your<br><em>Name</em>
+              Oops<br><em>First</em>
             </h1>
-            <p class="hero-desc">인프라를 코드로, 배포를 자동으로.<br>직접 만들고 부수며 배우는 DevOps 엔지니어.</p>
+            <p class="hero-desc">
+              실수는 가능한 빠르게<br>
+              복구는 더욱더 빠르게
+            </p>
           </div>
           <div class="hero-meta">
-            <div class="hero-stat"><span class="stat-n">3+</span><span class="stat-l">Projects</span></div>
-            <div class="hero-stat"><span class="stat-n">AWS</span><span class="stat-l">Cloud</span></div>
-            <div class="hero-stat"><span class="stat-n">∞</span><span class="stat-l">Coffee</span></div>
+            <div class="hero-stat">
+              <span class="stat-n">{{ project_count }}</span>
+              <span class="stat-l">Projects</span>
+            </div>
+            <div class="hero-stat">
+              <span class="stat-n">AWS</span>
+              <span class="stat-l">Cloud</span>
+            </div>
+            <div class="hero-stat">
+              <span class="stat-n">∞</span>
+              <span class="stat-l">Coffee</span>
+            </div>
           </div>
         </section>
 
@@ -95,25 +130,25 @@
             <div class="profile-avatar">YN</div>
             <div class="profile-text">
               <div class="profile-name">
-                Your Name
+                Peter Park
                 <span class="profile-star">★</span>
               </div>
               <div class="profile-links">
                 <a href="#" class="plink" title="홈">🏠</a>
-                <a href="#" class="plink" title="GitHub">⌥</a>
-                <a href="#" class="plink" title="YouTube">▶</a>
-                <a href="#" class="plink" title="메일">✉</a>
+                <a href="https://github.com/peter-HM" class="plink" title="GitHub">⌥</a>
+                <a href="https://www.instagram.com/yub._.bie/" class="plink" title="Instagram">▶</a>
+                <a href="https://chatgpt.com/" class="plink" title="Co-worker">👥</a>
               </div>
             </div>
           </div>
           <div class="profile-cta">
-            <a href="#" class="btn-primary">
+            <a href="/?page=projects" class="btn-primary">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-              포트폴리오 보기
+              프로젝트 보기
             </a>
-            <a href="#" class="btn-ghost">연락하기</a>
+            <a href="mailto:wd9793@naver.com" class="btn-ghost">연락하기</a>
           </div>
-          <div class="profile-tags">
+          <!-- <div class="profile-tags">
             <span class="tag-row">
               <span class="tag-label">스택</span>
               <span class="tag-val">AWS</span>
@@ -122,14 +157,14 @@
               <span class="tag-sep">·</span>
               <span class="tag-val">FastAPI</span>
             </span>
-          </div>
+          </div> -->
         </section>
 
         <!-- ── D. POSTS / NOTICES GRID ── -->
         <section class="card-section" id="section-home">
           <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
             {% if current_user %}
-            <a href="/post/new" class="btn-login">+ 글쓰기</a>
+            <a href="/post/new" class="btn-login" style="text-decoration: none;">+ 글쓰기</a>
             {% endif %}
           </div>
           <div class="card-grid" id="posts-grid">
@@ -139,9 +174,9 @@
         </section>
 
         <!-- ── E. SECTION TITLE ── -->
-        <div class="section-title-bar">
+        <!-- <div class="section-title-bar">
           <span>더 많은 프로젝트를 둘러보세요</span>
-        </div>
+        </div> -->
 
         <!-- ── F. PROJECT CARDS ── -->
         <section class="project-section" id="section-projects-preview">
@@ -173,6 +208,19 @@
             </div>
             <span class="snav-label">프로젝트</span>
           </button>
+          {% if current_user and current_user.role == 'mgr' %}
+          <button class="snav-item" onclick="window.location.href='/dashboard'">
+            <div class="snav-thumb snav-thumb-home">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="7" height="9" rx="1"/>
+                <rect x="14" y="3" width="7" height="5" rx="1"/>
+                <rect x="14" y="12" width="7" height="9" rx="1"/>
+                <rect x="3" y="16" width="7" height="5" rx="1"/>
+              </svg>
+            </div>
+            <span class="snav-label">대시보드</span>
+          </button>
+          {% endif %}
         </nav>
         <div class="sidebar-bottom">
           <button class="sidebar-all-btn">
@@ -186,7 +234,7 @@
 
     <!-- ── G. FOOTER ── -->
     <footer class="site-footer">
-      <span>© 2025 Your Name</span>
+      <span>© 2026 peter_hm</span>
       <span class="footer-sep">·</span>
       <span>Built with FastAPI &amp; Jinja2</span>
       <span class="footer-sep">·</span>
@@ -196,13 +244,16 @@
   </div><!-- /app-shell -->
 </div><!-- /macos-window -->
 
-<script src="{{ url_for('static', path='js/main.js') }}"></script>
-<script src="{{ url_for('static', path='js/main.append.js') }}"></script>
 <script>
   window.POSTS_DATA = {{ posts | tojson }};
   window.ALL_POSTS_DATA = {{ all_posts | tojson }};
   window.PROJECTS_DATA = {{ projects | tojson }};
+  window.IS_MGR = {{ 'true' if current_user and current_user.role == 'mgr' else 'false' }};
 </script>
+
+<script src="{{ url_for('static', path='js/main.js') }}"></script>
+<script src="{{ url_for('static', path='js/main.append.js') }}"></script>
+
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     initPasswordToggle();
@@ -210,6 +261,12 @@
     initSignupValidation();
     initAvatarUpload();
     initPostForm();
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    const page = new URLSearchParams(window.location.search).get('page');
+    if (page && typeof showPage === 'function') {
+      showPage(page);
+    }
   });
 </script>
 </body>

@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request, Form, UploadFile, File, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy.orm import Session
 
 from app.db.database import Base, engine, SessionLocal
 from app.models.post import Post
@@ -231,6 +232,8 @@ def home(request:Request):
             .all()
         )
 
+        project_count= len(projects_db)
+
         projects= []
         for prj in projects_db:
             status_label_map = {
@@ -258,7 +261,8 @@ def home(request:Request):
                 "posts": posts,
                 "all_posts": all_posts,
                 "projects": projects,
-                "current_user": current_user
+                "current_user": current_user,
+                "project_count": project_count
             }
         )
     finally:
@@ -267,15 +271,70 @@ def home(request:Request):
 @app.get("/dashboard")
 def dashboard(request:Request):
     current_user= request.session.get("user")
+
     if not current_user:
         return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse(
-        request= request,
-        name= "dashboard.html",
-        context={
-            "current_user": current_user
-        }
-    )
+    
+    if current_user.get("role") != "mgr":
+        return HTMLResponse("Forbidden", status_code= 403)
+
+    db= SessionLocal()
+    try:
+        recent_posts_db= (
+            db.query(Post)
+            .order_by(Post.updated_at.desc())
+            .limit(3)
+            .all()
+        )
+
+        recent_posts= []
+        for p in recent_posts_db:
+            recent_posts.append({
+                "id": p.id,
+                "title": p.title,
+                "cat": p.cat_detail,
+                "date": p.updated_at.strftime("%Y.%m.%d"),
+                "public": p.is_public
+            })
+        
+        recent_project_db= (
+            db.query(Project)
+            .order_by(Project.updated_at.desc())
+            .first()
+        )
+
+        recent_project= None
+        if recent_project_db:
+            recent_project= {
+                "id": recent_project_db.id,
+                "name": recent_project_db.name,
+                "status": recent_project_db.status,
+                "date": recent_project_db.updated_at.strftime("%Y.%m.%d"),
+                "public": recent_project_db.is_public
+            }
+
+        status_panel = [
+            {"label": "Server", "value": "Running", "state": "ok"},
+            {"label": "Environment", "value": "Local", "state":"warn"},
+            {"label": "Docker", "value": "Enabled", "state": "ok"},
+            {"label": "DB", "value": "Connected", "state": "ok"},
+            {"label": "Version", "value": "v0.1.0", "state": "info"},
+            {"label": "Mode", "value": "Manager", "state": "accent"},
+        ]
+
+        return templates.TemplateResponse(
+            request= request,
+            name= "dashboard.html",
+            context={
+                "current_user": current_user,
+                "recent_posts": recent_posts,
+                "recent_project": recent_project,
+                "status_panel": status_panel
+            }
+        )
+    finally:
+        db.close()
+
 
 ##### LOGIN ###############################################################################
 
@@ -312,14 +371,14 @@ def login_submit(request:Request, username: str = Form(...), password: str = For
             "avatar_image": user.avatar_image,
             "role": user.role
         }
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return RedirectResponse(url="/", status_code=303)
     finally:
         db.close()
 
 @app.get("/logout")
 def logout(request:Request):
     request.session.clear()
-    return RedirectResponse(url="/login", status_code=303)
+    return RedirectResponse(url="/", status_code=303)
 
 
 @app.get("/signup")

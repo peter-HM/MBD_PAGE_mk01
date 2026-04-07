@@ -101,17 +101,20 @@ function showPage(page) {
     postsView.id = 'page-posts';
     postsView.className = 'page-view';
     postsView.innerHTML = `
-      <div class="page-heading">포스트</div>
-      <div class="post-list-full">
-        ${window.ALL_POSTS_DATA.map(p => `
-          <a href="${p.url}" class="post-list-item">
-            <span class="pli-date">${p.date}</span>
-            <span class="pli-title">${p.title}</span>
-            <span class="pli-tag">${p.tag}</span>
-          </a>
-        `).join('')}
-      </div>
-    `;
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.2rem;">
+      <div class="page-heading" style="margin-bottom:0; border-bottom:none; padding-bottom:0;">포스트</div>
+      ${window.IS_MGR ? `<a href="/post/new" class="btn-login" style="text-decoration:none;">+ 글쓰기</a>` : ``}
+    </div>
+    <div class="post-list-full">
+      ${(window.ALL_POSTS_DATA || []).map(p => `
+        <a href="${p.url}" class="post-list-item">
+          <span class="pli-date">${p.date}</span>
+          <span class="pli-title">${p.title}</span>
+          <span class="pli-tag">${p.tag}</span>
+        </a>
+      `).join('')}
+    </div>
+  `;
     content.appendChild(postsView);
   }
   if (postsView) postsView.classList.toggle('active', page === 'posts');
@@ -123,24 +126,27 @@ function showPage(page) {
     projView.id = 'page-projects';
     projView.className = 'page-view';
     projView.innerHTML = `
-      <div class="page-heading">프로젝트</div>
-      <div class="project-grid">
-        ${window.PROJECTS_DATA.map(p => `
-          <div class="project-card" onclick="window.location.href='${p.url}'">
-            <div class="project-thumb" style="background:${p.bg}">
-              <span style="font-size:2.2rem;position:relative;z-index:1">${p.emoji}</span>
-            </div>
-            <div class="project-info">
-              <div class="project-name">${p.name} <span class="project-star">★</span></div>
-              <div class="project-genre">
-                ${p.tags.map(t => `<span class="genre-tag">${t}</span>`).join('')}
-                <span class="platform-icons">${p.platforms.join('')}</span>
-              </div>
-            </div>
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.2rem;">
+    <div class="page-heading" style="margin-bottom:0; border-bottom:none; padding-bottom:0;">프로젝트</div>
+    ${window.IS_MGR ? `<a href="/project/new" class="btn-login" style="text-decoration:none;">+ 새 프로젝트</a>` : ``}
+  </div>
+  <div class="project-grid">
+    ${(window.PROJECTS_DATA || []).map(p => `
+      <div class="project-card" onclick="window.location.href='${p.url}'">
+        <div class="project-thumb" style="background:${p.bg}">
+          <span style="font-size:2.2rem;position:relative;z-index:1">${p.emoji}</span>
+        </div>
+        <div class="project-info">
+          <div class="project-name">${p.name} <span class="project-star">★</span></div>
+          <div class="project-genre">
+            ${p.tags.map(t => `<span class="genre-tag">${t}</span>`).join('')}
+            <span class="platform-icons">${p.platforms.join('')}</span>
           </div>
-        `).join('')}
+        </div>
       </div>
-    `;
+    `).join('')}
+  </div>
+`;
     content.appendChild(projView);
   }
   if (projView) projView.classList.toggle('active', page === 'projects');
