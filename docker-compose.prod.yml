@@ -1,8 +1,6 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: docker/app/Dockerfile
+    image: peterhm/mbd-page:latest
     container_name: mbd_page_app
     ports:
       - "${APP_PORT}:8000"

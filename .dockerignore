@@ -1,0 +1,31 @@
+# 가상환경
+.venv
+
+# Git
+.git
+.gitignore
+
+# 환경변수 (절대 이미지에 포함되면 안됨)
+.env
+.env.example
+
+# Python 캐시
+__pycache__
+*.pyc
+*.pyo
+
+# 개발 도구
+.vscode
+.idea
+.DS_Store
+
+# 데이터 (볼륨으로 마운트할 것들)
+data/
+
+# Docker 관련 (이미지 안에 넣을 필요 없음)
+docker/
+docker-compose.yml
+
+# 임시 파일
+tmp_avatar.png
+cookies.txt
