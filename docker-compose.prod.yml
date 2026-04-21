@@ -2,6 +2,7 @@ services:
   app:
     image: peterhm/mbd-page:latest
     container_name: mbd_page_app
+    restart: unless-stopped
     ports:
       - "${APP_PORT}:8000"
     depends_on:
@@ -16,6 +17,7 @@ services:
   db:
     image: postgres:16
     container_name: mbd_page_db
+    restart: unless-stopped
     env_file:
       - .env
     volumes:
