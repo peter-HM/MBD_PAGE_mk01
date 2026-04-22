@@ -42,3 +42,20 @@ jobs:
                   docker pull peterhm/mbd-page:latest
                   docker compose -f docker-compose.prod.yml up -d
                   docker image prune -f
+
+            - name: Health Check
+              uses: appleboy/ssh-action@v1
+              with:
+                host: ${{ secrets.EC2_HOST }}
+                username: ${{ secrets.EC2_USERNAME }}
+                key: ${{ secrets.EC2_SSH_KEY }}
+                script: |
+                  sleep 10
+                  response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000)
+                  if [ "$response" = "200" ]; then
+                    echo "✅ Health Check 성공: $response"
+                  else
+                    echo "❌ Health Check 실패: $response"
+                    exit 1
+                  fi
+
