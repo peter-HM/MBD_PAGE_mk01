@@ -13,6 +13,8 @@ services:
     volumes:
       - ./data/logs:/app/data/logs
       - ./data/uploads:/app/data/uploads
+    networks:
+      - app_network
 
   db:
     image: postgres:16
@@ -27,3 +29,10 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    networks:
+      - app_network
+
+
+networks:
+  app_network:
+    driver: bridge
